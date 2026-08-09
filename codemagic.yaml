@@ -12,6 +12,29 @@ workflows:
         script: |
           flutter pub get
 
+      # BoringSSL-GRPC's podspec bakes a literal "-GCC_WARN_INHIBIT_ALL_WARNINGS"
+      # token into OTHER_CFLAGS, which newer Clang misparses as an unsupported
+      # standalone "-G" flag. The Podfile's post_install Ruby hook did NOT
+      # remove it in practice (confirmed via verbose build log — the flag
+      # showed up completely unchanged in the actual clang invocation), so
+      # patch it directly in the generated .xcconfig files on disk instead,
+      # which is what Clang actually reads. Flutter's own `pod install` call
+      # inside `flutter build ios` will see Podfile.lock/Manifest.lock
+      # already match and skip reinstalling, so this patch survives through
+      # to the actual compile.
+      - name: Install pods and patch BoringSSL-GRPC OTHER_CFLAGS
+        script: |
+          set -e
+          cd ios
+          pod install --repo-update
+          cd ..
+          grep -rl -- "-GCC_WARN_INHIBIT_ALL_WARNINGS" ios/Pods --include="*.xcconfig" | while read -r f; do
+            echo "Patching $f"
+            sed -i '' 's/-GCC_WARN_INHIBIT_ALL_WARNINGS//g' "$f"
+          done
+          echo "Remaining occurrences after patch (should be none):"
+          grep -rl -- "-GCC_WARN_INHIBIT_ALL_WARNINGS" ios/Pods --include="*.xcconfig" || echo "none found"
+
       # No code signing here on purpose — AltStore/AltServer will sign the
       # .ipa itself with your personal (free) Apple ID at install time.
       - name: Build unsigned iOS app
