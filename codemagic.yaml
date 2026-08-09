@@ -16,7 +16,14 @@ workflows:
       # .ipa itself with your personal (free) Apple ID at install time.
       - name: Build unsigned iOS app
         script: |
-          flutter build ios --release --no-codesign
+          set +e
+          flutter build ios --release --no-codesign --verbose 2>&1 | tee build_verbose.log
+          BUILD_EXIT=${PIPESTATUS[0]}
+          # Surface the exact failing compiler invocation (with the bad -G
+          # flag) so we can pinpoint its source instead of guessing again.
+          grep -B5 -- "-G " build_verbose.log > g_flag_context.log
+          grep -B5 "unsupported option" build_verbose.log >> g_flag_context.log
+          exit $BUILD_EXIT
 
       # `flutter build ios --no-codesign` only produces Runner.app, not a
       # .ipa. Package it into the standard Payload/ zip structure AltStore
@@ -30,4 +37,5 @@ workflows:
           zip -r campustrack-unsigned.ipa Payload
     artifacts:
       - build/ios/iphoneos/campustrack-unsigned.ipa
-      - flutter_drive.log
+      - g_flag_context.log
+      - build_verbose.log
