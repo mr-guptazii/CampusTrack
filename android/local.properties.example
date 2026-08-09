@@ -1,0 +1,7 @@
+# Copy this file to `local.properties` (same folder) and fill in your paths.
+# `flutter create .` (see SETUP.md) generates a real local.properties automatically —
+# this example is only here for reference / manual setup.
+sdk.dir=C:\\Users\\<you>\\AppData\\Local\\Android\\Sdk
+flutter.sdk=C:\\src\\flutter
+flutter.versionName=1.0.0
+flutter.versionCode=1

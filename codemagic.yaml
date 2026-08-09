@@ -1,0 +1,33 @@
+workflows:
+  ios-unsigned-sideload:
+    name: CampusTrack iOS (unsigned, for AltStore sideloading)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      vars:
+        BUNDLE_ID: "com.campustrack.campustrack"
+    scripts:
+      - name: Install Flutter dependencies
+        script: |
+          flutter pub get
+
+      # No code signing here on purpose — AltStore/AltServer will sign the
+      # .ipa itself with your personal (free) Apple ID at install time.
+      - name: Build unsigned iOS app
+        script: |
+          flutter build ios --release --no-codesign
+
+      # `flutter build ios --no-codesign` only produces Runner.app, not a
+      # .ipa. Package it into the standard Payload/ zip structure AltStore
+      # expects, without embedding any signature.
+      - name: Package unsigned .ipa
+        script: |
+          set -e
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/Runner.app
+          zip -r campustrack-unsigned.ipa Payload
+    artifacts:
+      - build/ios/iphoneos/campustrack-unsigned.ipa
+      - flutter_drive.log

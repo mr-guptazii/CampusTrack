@@ -1,0 +1,44 @@
+rules_version = '2';
+
+// CampusTrack Firestore security rules.
+// Layout:
+//   users/{uid}
+//   subjects/{uid}/items/{subjectId}
+//   attendance/{uid}/records/{recordId}
+//   timetable/{uid}/entries/{entryId}
+//
+// Every collection is scoped under the requesting user's own uid, so a
+// signed-in user can only ever read or write their own data.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+    }
+
+    match /subjects/{uid}/items/{subjectId} {
+      allow read, write: if isOwner(uid);
+    }
+
+    match /attendance/{uid}/records/{recordId} {
+      allow read, write: if isOwner(uid);
+    }
+
+    match /timetable/{uid}/entries/{entryId} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // Deny everything else by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
