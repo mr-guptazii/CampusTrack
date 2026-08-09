@@ -45,18 +45,21 @@ post_install do |installer|
       # deployment targets; force them up to match the app.
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
 
-      # Known issue: BoringSSL-GRPC's generated xcconfig contains a literal
-      # "-GCC_WARN_INHIBIT_ALL_WARNINGS" string that newer Clang misparses as
-      # an unsupported standalone "-G" flag, causing the build to fail with
-      # "unsupported option '-G' for target ...". Strip it from the
-      # generated xcconfig as the documented workaround.
+      # BoringSSL-GRPC's podspec sets OTHER_CFLAGS directly to include a
+      # literal "-GCC_WARN_INHIBIT_ALL_WARNINGS" token (old, historically
+      # harmless boilerplate). Newer Clang (confirmed via verbose build log:
+      # Xcode 26 toolchain) parses this as an unsupported standalone "-G"
+      # flag and hard-fails with "unsupported option '-G' for target ...".
+      # Strip it directly from the OTHER_CFLAGS build setting — this is
+      # where the flag actually lives, not in a generated xcconfig file.
       if target.name == 'BoringSSL-GRPC'
-        config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'NO'
-        xcconfig_path = config.base_configuration_reference&.real_path
-        if xcconfig_path && File.exist?(xcconfig_path)
-          xcconfig = File.read(xcconfig_path)
-          xcconfig_mod = xcconfig.gsub(/-GCC_WARN_INHIBIT_ALL_WARNINGS/, '')
-          File.open(xcconfig_path, 'w') { |file| file << xcconfig_mod }
+        other_cflags = config.build_settings['OTHER_CFLAGS']
+        if other_cflags.is_a?(String)
+          config.build_settings['OTHER_CFLAGS'] =
+            other_cflags.gsub('-GCC_WARN_INHIBIT_ALL_WARNINGS', '').strip
+        elsif other_cflags.is_a?(Array)
+          config.build_settings['OTHER_CFLAGS'] =
+            other_cflags.reject { |flag| flag == '-GCC_WARN_INHIBIT_ALL_WARNINGS' }
         end
       end
     end
