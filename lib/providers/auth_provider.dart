@@ -25,6 +25,11 @@ class AuthProvider extends ChangeNotifier {
     clientId: kIsWeb ? '201233177226-eios8ecd0ikejoajomuli41qskt88h90.apps.googleusercontent.com' : null,
   );
 
+  // Exposed so the web GIS button (widgets/google_sign_in_button_web.dart)
+  // reuses this already-configured instance instead of constructing a new
+  // GoogleSignIn(), which would re-run web init with no clientId and crash.
+  GoogleSignIn get googleSignIn => _googleSignIn;
+
   AuthStatus status = AuthStatus.unknown;
   UserModel? currentUser;
   String? errorMessage;
@@ -75,17 +80,32 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> signInWithGoogle() async {
     return _guarded(() async {
+      // On web this deprecated popup flow triggers a `window.closed` check
+      // that Chrome's default Cross-Origin-Opener-Policy blocks, leaving
+      // sign-in stuck; the web UI instead renders Google's own button
+      // (see widgets/google_sign_in_button.dart) and calls
+      // [signInWithGoogleAccount] from onCurrentUserChanged.
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         throw FirebaseAuthException(code: 'cancelled', message: 'Sign-in cancelled');
       }
-      final googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-      await _auth.signInWithCredential(credential);
+      await _completeGoogleSignIn(googleUser);
     });
+  }
+
+  /// Completes Firebase sign-in for a [GoogleSignInAccount] already obtained
+  /// elsewhere (e.g. the web GIS button's `onCurrentUserChanged` stream).
+  Future<bool> signInWithGoogleAccount(GoogleSignInAccount googleUser) {
+    return _guarded(() => _completeGoogleSignIn(googleUser));
+  }
+
+  Future<void> _completeGoogleSignIn(GoogleSignInAccount googleUser) async {
+    final googleAuth = await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+    await _auth.signInWithCredential(credential);
   }
 
   Future<void> resetPassword(String email) =>

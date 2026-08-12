@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/constants/app_constants.dart';
+import '../../widgets/google_sign_in_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,15 +32,6 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(auth.errorMessage ?? 'Login failed')),
-      );
-    }
-  }
-
-  Future<void> _submitGoogle(AuthProvider auth) async {
-    final ok = await auth.signInWithGoogle();
-    if (!ok && mounted && auth.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.errorMessage!)),
       );
     }
   }
@@ -125,12 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Expanded(child: Divider(color: scheme.outlineVariant)),
                   ]),
                   const SizedBox(height: 14),
-                  OutlinedButton.icon(
-                    onPressed: auth.isLoading ? null : () => _submitGoogle(auth),
-                    icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
-                    label: const Text('Continue with Google'),
-                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                  ),
+                  const GoogleSignInButton(),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
