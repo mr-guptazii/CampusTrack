@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -19,6 +20,11 @@ class NotificationService {
   static const String _warningChannelId = 'attendance_warning';
 
   Future<void> init() async {
+    // flutter_local_notifications and dart:io's Platform have no web
+    // implementation; local reminders and FCM tokens aren't available in
+    // the browser, so skip setup there entirely.
+    if (kIsWeb) return;
+
     tz_data.initializeTimeZones();
 
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -54,7 +60,7 @@ class NotificationService {
     await _fcm.requestPermission(alert: true, badge: true, sound: true);
   }
 
-  Future<String?> getFcmToken() => _fcm.getToken();
+  Future<String?> getFcmToken() => kIsWeb ? Future.value(null) : _fcm.getToken();
 
   /// Schedules a one-off reminder [minutesBefore] a class starts.
   Future<void> scheduleClassReminder({
@@ -64,6 +70,7 @@ class NotificationService {
     required DateTime classStart,
     int minutesBefore = 10,
   }) async {
+    if (kIsWeb) return;
     final scheduledTime = classStart.subtract(Duration(minutes: minutesBefore));
     if (scheduledTime.isBefore(DateTime.now())) return;
 
@@ -89,6 +96,7 @@ class NotificationService {
 
   /// Schedules the recurring 8 PM daily attendance reminder.
   Future<void> scheduleDailyReminder() async {
+    if (kIsWeb) return;
     final now = DateTime.now();
     var target = DateTime(now.year, now.month, now.day, 20);
     if (target.isBefore(now)) target = target.add(const Duration(days: 1));
@@ -112,9 +120,10 @@ class NotificationService {
     );
   }
 
-  Future<void> cancelAllReminders() => _local.cancelAll();
+  Future<void> cancelAllReminders() => kIsWeb ? Future.value() : _local.cancelAll();
 
   Future<void> showTargetWarning(String subjectName, double percentage) async {
+    if (kIsWeb) return;
     await _local.show(
       subjectName.hashCode,
       'Low attendance: $subjectName',

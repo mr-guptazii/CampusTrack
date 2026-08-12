@@ -17,7 +17,13 @@ class AuthProvider extends ChangeNotifier {
   }
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  // google_sign_in_web has no meta-tag fallback wired up in web/index.html,
+  // so the web OAuth client id (from Firebase Auth's Google provider config)
+  // must be passed explicitly here, or GoogleSignIn() throws on construction
+  // for every web page load, not just when Google sign-in is actually used.
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: kIsWeb ? '201233177226-eios8ecd0ikejoajomuli41qskt88h90.apps.googleusercontent.com' : null,
+  );
 
   AuthStatus status = AuthStatus.unknown;
   UserModel? currentUser;

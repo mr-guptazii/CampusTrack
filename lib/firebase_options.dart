@@ -27,12 +27,13 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'REPLACE_WITH_FLUTTERFIRE_CONFIGURE',
-    appId: 'REPLACE_WITH_FLUTTERFIRE_CONFIGURE',
-    messagingSenderId: 'REPLACE_WITH_FLUTTERFIRE_CONFIGURE',
-    projectId: 'campustrack-app',
-    authDomain: 'campustrack-app.firebaseapp.com',
-    storageBucket: 'campustrack-app.appspot.com',
+    apiKey: 'AIzaSyB--lModv5lOwvI_Rqnxg2xP01j4PZoF28',
+    appId: '1:201233177226:web:8131f2e532f8d4aab5ab73',
+    messagingSenderId: '201233177226',
+    projectId: 'campustrack-eca81',
+    authDomain: 'campustrack-eca81.firebaseapp.com',
+    storageBucket: 'campustrack-eca81.firebasestorage.app',
+    measurementId: 'G-C8GBKVWW63',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
