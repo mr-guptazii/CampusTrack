@@ -35,9 +35,6 @@ class _MainShellScreenState extends State<MainShellScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final subjectProvider = context.read<SubjectProvider>();
-      // Must complete before the empty-check below, otherwise a returning
-      // user's real Firestore data may not have loaded yet and this would
-      // incorrectly seed demo subjects into their account.
       await subjectProvider.syncWithRemote();
       // TimetableProvider's constructor also fires a sync at app bootstrap,
       // but FirebaseAuth's persisted session may not have resolved yet at
@@ -47,7 +44,6 @@ class _MainShellScreenState extends State<MainShellScreen> {
         await context.read<TimetableProvider>().syncWithRemote();
       }
       subjectProvider.startListening();
-      await subjectProvider.seedDemoDataIfEmpty();
       if (mounted) {
         await context.read<AttendanceProvider>().init();
       }

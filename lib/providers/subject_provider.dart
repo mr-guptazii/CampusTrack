@@ -6,7 +6,6 @@ import '../models/subject.dart';
 import '../repositories/firebase_repository.dart';
 import '../repositories/local_repository.dart';
 import '../core/services/connectivity_service.dart';
-import '../core/constants/app_constants.dart';
 
 /// Offline-first subject list. Reads/writes hit Hive immediately (so the UI
 /// never blocks on network); Firestore is synced opportunistically whenever
@@ -190,25 +189,6 @@ class SubjectProvider extends ChangeNotifier {
       await FirebaseRepository.instance.upsertSubject(uid, subject);
     } else {
       await LocalRepository.instance.queueForSync('subject', subject.id, subject.toJson());
-    }
-  }
-
-  /// Seeds realistic demo subjects for first-time users so the dashboard,
-  /// analytics and bunk calculator aren't empty on first launch.
-  Future<void> seedDemoDataIfEmpty() async {
-    if (_subjects.isNotEmpty) return;
-    final now = DateTime.now();
-    final demo = [
-      Subject(id: _uuid.v4(), name: 'Data Structures', code: 'CS201', faculty: 'Dr. R. Sharma', attended: 21, total: 26, targetPercentage: 75, colorValue: SubjectColors.options[0], icon: 'code', updatedAt: now),
-      Subject(id: _uuid.v4(), name: 'DBMS', code: 'CS202', faculty: 'Prof. A. Verma', attended: 17, total: 24, targetPercentage: 75, colorValue: SubjectColors.options[1], icon: 'science', updatedAt: now),
-      Subject(id: _uuid.v4(), name: 'Operating Systems', code: 'CS203', faculty: 'Dr. K. Iyer', attended: 14, total: 22, targetPercentage: 75, colorValue: SubjectColors.options[2], icon: 'architecture', updatedAt: now),
-      Subject(id: _uuid.v4(), name: 'Computer Networks', code: 'CS204', faculty: 'Prof. S. Nair', attended: 18, total: 25, targetPercentage: 75, colorValue: SubjectColors.options[3], icon: 'public', updatedAt: now),
-      Subject(id: _uuid.v4(), name: 'Mathematics', code: 'MA201', faculty: 'Dr. P. Menon', attended: 23, total: 27, targetPercentage: 75, colorValue: SubjectColors.options[4], icon: 'calculate', updatedAt: now),
-    ];
-    _subjects = demo;
-    notifyListeners();
-    for (final s in demo) {
-      await _persist(s);
     }
   }
 
