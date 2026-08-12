@@ -7,6 +7,7 @@ import 'analytics/analytics_screen.dart';
 import 'settings/settings_screen.dart';
 import '../providers/subject_provider.dart';
 import '../providers/attendance_provider.dart';
+import '../providers/timetable_provider.dart';
 
 /// Hosts the 5 primary tabs behind a Material 3 NavigationBar. Pushed
 /// screens (add/edit subject, attendance history, bunk calculator, profile,
@@ -38,6 +39,13 @@ class _MainShellScreenState extends State<MainShellScreen> {
       // user's real Firestore data may not have loaded yet and this would
       // incorrectly seed demo subjects into their account.
       await subjectProvider.syncWithRemote();
+      // TimetableProvider's constructor also fires a sync at app bootstrap,
+      // but FirebaseAuth's persisted session may not have resolved yet at
+      // that point (especially on a fresh install), so that first attempt
+      // can silently no-op. Re-sync here, once auth is guaranteed ready.
+      if (mounted) {
+        await context.read<TimetableProvider>().syncWithRemote();
+      }
       subjectProvider.startListening();
       await subjectProvider.seedDemoDataIfEmpty();
       if (mounted) {
