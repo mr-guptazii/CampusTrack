@@ -28,7 +28,7 @@ class SplashScreen extends StatelessWidget {
               ),
               SizedBox(height: 8),
               Text(
-                'Never miss your 75% again',
+                'Never miss your attendance\'s track',
                 style: TextStyle(color: Colors.white70, fontSize: 14),
               ),
               SizedBox(height: 32),
