@@ -5,16 +5,12 @@ import '../../providers/auth_provider.dart';
 import '../../providers/subject_provider.dart';
 import '../../providers/timetable_provider.dart';
 import '../../providers/attendance_provider.dart';
-import '../../models/attendance_record.dart';
-import '../../models/subject.dart';
-import '../../models/timetable_entry.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/constants/app_constants.dart';
-import '../../core/utils/date_utils.dart';
 import '../../widgets/percentage_indicator.dart';
 import '../../widgets/timetable_tile.dart';
 import '../../widgets/subject_card.dart';
-import '../../widgets/attendance_button.dart';
+import '../../widgets/mark_attendance_sheet.dart';
 import '../../widgets/analytics_chart.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -35,9 +31,13 @@ class DashboardScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (sheetContext) {
-        return _QuickMarkSheet(todayEntries: todayEntries, allSubjects: allSubjects);
+        return MarkAttendanceSheet(
+            date: DateTime.now(),
+            entries: todayEntries,
+            allSubjects: allSubjects);
       },
     );
   }
@@ -56,7 +56,8 @@ class DashboardScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Hi, ${auth.currentUser?.displayName.split(' ').first ?? 'there'} 👋'),
+        title: Text(
+            'Hi, ${auth.currentUser?.displayName.split(' ').first ?? 'there'} 👋'),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_outline),
@@ -82,18 +83,25 @@ class DashboardScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Overall Attendance', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                        const Text('Overall Attendance',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 13)),
                         const SizedBox(height: 6),
                         Text(
                           '${subjectProvider.overallPercentage.toStringAsFixed(1)}%',
-                          style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w800),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 34,
+                              fontWeight: FontWeight.w800),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          subjectProvider.overallPercentage >= AppDefaults.targetPercentage
+                          subjectProvider.overallPercentage >=
+                                  AppDefaults.targetPercentage
                               ? 'Great job staying on track!'
                               : 'Below your ${AppDefaults.targetPercentage.toStringAsFixed(0)}% target',
-                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 12),
                         ),
                       ],
                     ),
@@ -139,37 +147,56 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Today's classes
-            Text("Today's Classes", style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Text("Today's Classes",
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 10),
             if (todayClasses.isEmpty)
-              const _EmptyHint(icon: Icons.event_available_outlined, message: 'No classes scheduled today')
+              const _EmptyHint(
+                  icon: Icons.event_available_outlined,
+                  message: 'No classes scheduled today')
             else
               ...todayClasses.map((entry) {
                 final subject = subjectProvider.byId(entry.subjectId);
-                final ongoing = timetableProvider.currentOngoing()?.id == entry.id;
+                final ongoing =
+                    timetableProvider.currentOngoing()?.id == entry.id;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: TimetableTile(entry: entry, subject: subject, isOngoing: ongoing),
+                  child: TimetableTile(
+                      entry: entry, subject: subject, isOngoing: ongoing),
                 );
               }),
             const SizedBox(height: 24),
 
             // Weekly summary chart
-            Text('Weekly Summary', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Text('Weekly Summary',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 10),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: SizedBox(height: 160, child: AttendanceTrendLineChart(trend: trend)),
+                child: SizedBox(
+                    height: 160, child: AttendanceTrendLineChart(trend: trend)),
               ),
             ),
             const SizedBox(height: 24),
 
             // Subjects below target
-            Text('Subjects Below Target', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Text('Subjects Below Target',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 10),
             if (belowTarget.isEmpty)
-              const _EmptyHint(icon: Icons.emoji_events_outlined, message: 'All subjects are on target!')
+              const _EmptyHint(
+                  icon: Icons.emoji_events_outlined,
+                  message: 'All subjects are on target!')
             else
               ...belowTarget.map((s) => Padding(
                     padding: const EdgeInsets.only(bottom: 8),
@@ -191,7 +218,8 @@ class _QuickAction extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _QuickAction({required this.icon, required this.label, required this.onTap});
+  const _QuickAction(
+      {required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -206,7 +234,10 @@ class _QuickAction extends StatelessWidget {
             children: [
               Icon(icon, color: scheme.primary),
               const SizedBox(height: 6),
-              Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+              Text(label,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 11, fontWeight: FontWeight.w600)),
             ],
           ),
         ),
@@ -234,212 +265,6 @@ class _EmptyHint extends StatelessWidget {
             Text(message, style: TextStyle(color: scheme.onSurfaceVariant)),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _QuickMarkSheet extends StatefulWidget {
-  final List<TimetableEntry> todayEntries;
-  final List<Subject> allSubjects;
-
-  const _QuickMarkSheet({required this.todayEntries, required this.allSubjects});
-
-  @override
-  State<_QuickMarkSheet> createState() => _QuickMarkSheetState();
-}
-
-class _QuickMarkSheetState extends State<_QuickMarkSheet> {
-  final Map<String, AttendanceStatus> _selections = {};
-  final List<String> _extraSubjectIds = [];
-
-  @override
-  void initState() {
-    super.initState();
-    // Pre-fill selections with anything already marked for today so
-    // reopening the sheet shows the current state instead of resetting it.
-    final todayRecords = context.read<AttendanceProvider>().forDate(DateTime.now());
-    for (final r in todayRecords) {
-      _selections[r.subjectId] = r.status;
-    }
-  }
-
-  Subject? _subjectById(String id) {
-    for (final s in widget.allSubjects) {
-      if (s.id == id) return s;
-    }
-    return null;
-  }
-
-  Future<Subject?> _pickSubject(List<Subject> available, String title) {
-    if (available.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All your subjects are already listed for today')),
-      );
-      return Future.value(null);
-    }
-    return showModalBottomSheet<Subject>(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (pickerContext) {
-        return SafeArea(
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-              ),
-              ...available.map((s) => ListTile(
-                    title: Text(s.name),
-                    subtitle: Text(s.code),
-                    onTap: () => Navigator.pop(pickerContext, s),
-                  )),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  List<Subject> _substitutionCandidates({String? excludeSubjectId}) {
-    final scheduledIds = widget.todayEntries.map((e) => e.subjectId).toSet();
-    return widget.allSubjects
-        .where((s) =>
-            !scheduledIds.contains(s.id) &&
-            !_extraSubjectIds.contains(s.id) &&
-            s.id != excludeSubjectId)
-        .toList();
-  }
-
-  Future<void> _addExtraClass() async {
-    final picked = await _pickSubject(_substitutionCandidates(), 'Which class was actually held?');
-    if (picked != null) {
-      setState(() => _extraSubjectIds.add(picked.id));
-    }
-  }
-
-  Future<void> _substituteClass(String originalSubjectId) async {
-    final picked = await _pickSubject(
-      _substitutionCandidates(excludeSubjectId: originalSubjectId),
-      'Which class was held instead?',
-    );
-    if (picked == null || !mounted) return;
-    setState(() {
-      _selections[originalSubjectId] = AttendanceStatus.cancelled;
-      _extraSubjectIds.add(picked.id);
-    });
-    await context.read<AttendanceProvider>().markAttendance(
-          subjectId: originalSubjectId,
-          date: DateTime.now(),
-          status: AttendanceStatus.cancelled,
-        );
-  }
-
-  Widget _buildRow({required String subjectId, required String? subtitle, VoidCallback? onSubstitute}) {
-    final subject = _subjectById(subjectId);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(subject?.name ?? 'Unknown subject', style: const TextStyle(fontWeight: FontWeight.w600)),
-              ),
-              if (onSubstitute != null)
-                TextButton.icon(
-                  onPressed: onSubstitute,
-                  icon: const Icon(Icons.swap_horiz, size: 16),
-                  label: const Text('Substitute'),
-                  style: TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: VisualDensity.compact),
-                ),
-            ],
-          ),
-          if (subtitle != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 2, bottom: 6),
-              child: Text(subtitle, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-            )
-          else
-            const SizedBox(height: 8),
-          AttendanceButtonGroup(
-            selected: _selections[subjectId],
-            onSelect: (status) async {
-              setState(() => _selections[subjectId] = status);
-              await context.read<AttendanceProvider>().markAttendance(
-                    subjectId: subjectId,
-                    date: DateTime.now(),
-                    status: status,
-                  );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hasAnyClasses = widget.todayEntries.isNotEmpty || _extraSubjectIds.isNotEmpty;
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Mark today\'s attendance', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-          Text(AppDateUtils.dayMonthYear(DateTime.now()), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          const SizedBox(height: 16),
-          if (!hasAnyClasses)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text('No classes scheduled today.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-            )
-          else
-            ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  for (final entry in widget.todayEntries) ...[
-                    _buildRow(
-                      subjectId: entry.subjectId,
-                      subtitle:
-                          '${AppDateUtils.formatHHmm(entry.startTime)} - ${AppDateUtils.formatHHmm(entry.endTime)}'
-                          '${entry.room.isNotEmpty ? ' · ${entry.room}' : ''}',
-                      onSubstitute: () => _substituteClass(entry.subjectId),
-                    ),
-                    const Divider(),
-                  ],
-                  for (final id in _extraSubjectIds) ...[
-                    _buildRow(subjectId: id, subtitle: 'Added to today\'s list'),
-                    const Divider(),
-                  ],
-                ],
-              ),
-            ),
-          const SizedBox(height: 4),
-          TextButton.icon(
-            onPressed: _addExtraClass,
-            icon: const Icon(Icons.add),
-            label: const Text('Add an extra class held today'),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Done'),
-            ),
-          ),
-        ],
       ),
     );
   }

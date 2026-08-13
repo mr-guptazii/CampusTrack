@@ -32,7 +32,8 @@ class AttendanceProvider extends ChangeNotifier {
   Future<void> init() async {
     _records = LocalRepository.instance.getAttendanceRecords();
     notifyListeners();
-    _connectivitySub ??= ConnectivityService.instance.onStatusChange.listen((online) {
+    _connectivitySub ??=
+        ConnectivityService.instance.onStatusChange.listen((online) {
       if (online) syncWithRemote();
     });
     await syncWithRemote();
@@ -42,9 +43,20 @@ class AttendanceProvider extends ChangeNotifier {
       _records.where((r) => r.subjectId == subjectId).toList()
         ..sort((a, b) => b.date.compareTo(a.date));
 
-  List<AttendanceRecord> forDate(DateTime date) => _records
-      .where((r) => AppDateUtils.isSameDay(r.date, date))
-      .toList();
+  List<AttendanceRecord> forDate(DateTime date) =>
+      _records.where((r) => AppDateUtils.isSameDay(r.date, date)).toList();
+
+  /// Fraction of [date]'s marked classes that were attended (present/extra),
+  /// out of the ones that count towards the total (i.e. excluding
+  /// cancelled). Returns null if nothing has been marked for that date yet,
+  /// so callers can tell "not marked" apart from "marked, 0% attended".
+  double? percentageForDate(DateTime date) {
+    final counted =
+        forDate(date).where((r) => r.status.countsTowardsTotal).toList();
+    if (counted.isEmpty) return null;
+    final attended = counted.where((r) => r.status.countsAsAttended).length;
+    return attended / counted.length;
+  }
 
   /// Attendance trend for the last [days] days: date -> percentage that day
   /// (based on cumulative attended/total up to and including that day).
@@ -54,7 +66,8 @@ class AttendanceProvider extends ChangeNotifier {
     final Map<DateTime, double> result = {};
     for (final day in dates) {
       final upToDay = sorted.where((r) =>
-          r.date.isBefore(day.add(const Duration(days: 1))) && r.status.countsTowardsTotal);
+          r.date.isBefore(day.add(const Duration(days: 1))) &&
+          r.status.countsTowardsTotal);
       final total = upToDay.length;
       final attended = upToDay.where((r) => r.status.countsAsAttended).length;
       result[day] = total == 0 ? 0 : (attended / total) * 100;
@@ -98,7 +111,11 @@ class AttendanceProvider extends ChangeNotifier {
     // its previous delta first.
     final existing = existingRecordId != null
         ? _records.where((r) => r.id == existingRecordId).firstOrNull
-        : _records.where((r) => r.subjectId == subjectId && AppDateUtils.isSameDay(r.date, date)).firstOrNull;
+        : _records
+            .where((r) =>
+                r.subjectId == subjectId &&
+                AppDateUtils.isSameDay(r.date, date))
+            .firstOrNull;
 
     if (existing != null) {
       await _revertDelta(existing);
@@ -158,7 +175,8 @@ class AttendanceProvider extends ChangeNotifier {
     if (await ConnectivityService.instance.checkNow()) {
       await FirebaseRepository.instance.upsertAttendance(uid, record);
     } else {
-      await LocalRepository.instance.queueForSync('attendance', record.id, record.toJson());
+      await LocalRepository.instance
+          .queueForSync('attendance', record.id, record.toJson());
     }
   }
 
@@ -171,7 +189,8 @@ class AttendanceProvider extends ChangeNotifier {
       final byId = {for (final r in _records) r.id: r};
       for (final r in remote) {
         final localVersion = byId[r.id];
-        if (localVersion == null || r.timestamp.isAfter(localVersion.timestamp)) {
+        if (localVersion == null ||
+            r.timestamp.isAfter(localVersion.timestamp)) {
           byId[r.id] = r;
           await LocalRepository.instance.putAttendanceRecord(r);
         }
