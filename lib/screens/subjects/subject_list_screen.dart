@@ -15,6 +15,13 @@ class SubjectListScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Subjects'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Add subject',
+            onPressed: () => context.push('/subjects/add'),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
@@ -29,10 +36,6 @@ class SubjectListScreen extends StatelessWidget {
             ),
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/subjects/add'),
-        child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(
         onRefresh: () => context.read<SubjectProvider>().syncWithRemote(),
